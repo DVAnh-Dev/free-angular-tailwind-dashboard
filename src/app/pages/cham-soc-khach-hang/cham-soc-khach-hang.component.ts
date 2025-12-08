@@ -2,25 +2,17 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { forkJoin } from "rxjs";
-import { ButtonComponent } from "../../shared/components/ui/button/button.component";
-import { BadgeComponent } from "../../shared/components/ui/badge/badge.component";
-import {
-  ProductCore,
-  productCoreData,
-} from "../../shared/components/custom/data-orders/product-core";
-import {
-  Customer,
-  KiotVietService,
-} from "../../shared/services/customer.service";
+import { finalize } from "rxjs/operators"; // Import thêm finalize để tắt loading
 
+// Import Services
+import { KiotVietService, Customer } from "../../shared/services/customer.service";
 import { ZaloService } from "../../shared/services/zalo.service";
 import { NocoService } from "../../shared/services/nocodb.service";
 
-// Components UI
+// Import Data
+import { ProductCore, productCoreData } from "../../shared/components/custom/data-orders/product-core";
 
-// Services & Data
-
-// Interface mở rộng
+// Interface
 export interface MaintenanceTask {
   customerCode: string;
   customerName: string;
@@ -30,14 +22,12 @@ export interface MaintenanceTask {
   productName: string;
   sku: string;
   purchaseDate: string;
-
-  // Thông tin chi tiết về từng lõi cần thay
   maintenanceDetails: {
-    coreName: string; // Ví dụ: Lõi 1
-    months: number; // Tuổi thọ (tháng)
-    dueDate: Date; // Ngày cần thay (Date object để sort)
-    dueDateStr: string; // Ngày cần thay (String để hiển thị)
-    status: "Gấp" | "Sắp tới" | "Xa"; // Trạng thái
+    coreName: string;
+    months: number;
+    dueDate: Date;
+    dueDateStr: string;
+    status: "Gấp" | "Sắp tới" | "Xa";
     daysRemaining: number;
   }[];
 }
@@ -45,18 +35,20 @@ export interface MaintenanceTask {
 @Component({
   selector: "app-cham-soc-khach-hang",
   standalone: true,
-  imports: [CommonModule, ButtonComponent, FormsModule, BadgeComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: "./cham-soc-khach-hang.component.html",
-  styleUrls: ["./cham-soc-khach-hang.component.css"], // Bạn có thể tạo file css rỗng nếu chưa cần style riêng
+  styleUrls: ["./cham-soc-khach-hang.component.css"],
 })
 export class ChamSocKhachHangComponent implements OnInit {
+  
   private productCores: ProductCore[] = productCoreData;
 
-  // Dữ liệu hiển thị
+  // Dữ liệu
   public maintenanceList: MaintenanceTask[] = [];
   public filteredList: MaintenanceTask[] = [];
+  public isLoading: boolean = false; // Biến trạng thái loading
 
-  // Phân trang & Tìm kiếm
+  // Pagination & Search
   public currentPage = 1;
   public itemsPerPage = 10;
   public searchTerm: string = "";
@@ -72,17 +64,21 @@ export class ChamSocKhachHangComponent implements OnInit {
   }
 
   loadData() {
+    this.isLoading = true; // Bật loading
+
     forkJoin({
       customersResponse: this.kiotVietService.getCustomers(),
       ordersResponse: this.kiotVietService.getOrders(),
-    }).subscribe({
+    }).pipe(
+      finalize(() => this.isLoading = false) // Tắt loading khi xong (dù thành công hay lỗi)
+    ).subscribe({
       next: (result) => {
         const customers = result.customersResponse.data;
         const orders = result.ordersResponse.data;
 
-        // Map: CustomerCode -> Customer Info
-        const customerMap = new Map<string, Customer>();
-        customers.forEach((c: Customer) => customerMap.set(c.code, c));
+        // Map Customer rõ ràng kiểu dữ liệu
+        const customerMap = new Map<string, any>(); 
+        customers.forEach((c: any) => customerMap.set(c.code, c));
 
         const tasks: MaintenanceTask[] = [];
         const now = new Date();
@@ -98,8 +94,8 @@ export class ChamSocKhachHangComponent implements OnInit {
 
           order.orderDetails.forEach((detail: any) => {
             const productCode = detail.productCode.toLowerCase().trim();
-
-            // Tìm sản phẩm trong danh sách Core
+            
+            // Tìm sản phẩm Core
             const matchedCore = this.productCores.find(
               (core) =>
                 productCode === core.sku.toLowerCase().trim() ||
@@ -107,48 +103,45 @@ export class ChamSocKhachHangComponent implements OnInit {
             );
 
             if (matchedCore && matchedCore.lifetimes) {
-              const details: any = [];
+              const details: any[] = [];
               const purchaseDate = new Date(order.modifiedDate);
 
-              // Tính toán cho từng lõi
               matchedCore.lifetimes.forEach((months, index) => {
                 if (months > 0) {
                   const dueDate = new Date(purchaseDate);
                   dueDate.setMonth(dueDate.getMonth() + months);
 
-                  // Tính số ngày còn lại
                   const diffTime = dueDate.getTime() - now.getTime();
                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                  // Xác định trạng thái
                   let status: "Gấp" | "Sắp tới" | "Xa" = "Xa";
-                  if (diffDays <= 15) status = "Gấp"; // Còn 1 tuần hoặc quá hạn
-                  else if (diffDays <= 45) status = "Sắp tới"; // Còn 1.5 tháng
+                  if (diffDays <= 15) status = "Gấp";
+                  else if (diffDays <= 60) status = "Sắp tới"; // Tăng lên 60 ngày để hiện nhiều hơn
 
-                  details.push({
-                    coreName: `Lõi số ${index + 1} (${months} tháng)`,
-                    months: months,
-                    dueDate: dueDate,
-                    dueDateStr: this.formatDate(dueDate),
-                    status: status,
-                    daysRemaining: diffDays,
-                  });
+                  // Chỉ hiện những cái sắp đến hạn hoặc quá hạn
+                  // Bỏ comment dòng dưới nếu muốn lọc bớt "Xa"
+                  // if (status !== "Xa") {
+                    details.push({
+                      coreName: `Lõi số ${index + 1} (${months} tháng)`,
+                      months: months,
+                      dueDate: dueDate,
+                      dueDateStr: this.formatDate(dueDate),
+                      status: status,
+                      daysRemaining: diffDays,
+                    });
+                  // }
                 }
               });
 
-              // Chỉ thêm vào danh sách nếu sản phẩm có lõi cần thay
               if (details.length > 0) {
-                // Sắp xếp các lõi cần thay sớm nhất lên đầu
-                details.sort(
-                  (a: any, b: any) => a.daysRemaining - b.daysRemaining
-                );
-
+                details.sort((a, b) => a.daysRemaining - b.daysRemaining);
+                
                 tasks.push({
                   customerCode: customer.code,
                   customerName: customer.name,
                   contactNumber: customer.contactNumber,
-                  address: customer.address,
-                  locationName: customer.locationName,
+                  address: customer.address || 'Chưa cập nhật',
+                  locationName: customer.locationName || '',
                   productName: detail.productName,
                   sku: detail.productCode,
                   purchaseDate: order.modifiedDate,
@@ -159,14 +152,10 @@ export class ChamSocKhachHangComponent implements OnInit {
           });
         });
 
-        // Sắp xếp danh sách tổng: Khách nào có lõi cần thay sớm nhất thì lên đầu
+        // Sort tổng: Ai cần thay gấp nhất lên đầu
         tasks.sort((a, b) => {
-          const minDayA = Math.min(
-            ...a.maintenanceDetails.map((d) => d.daysRemaining)
-          );
-          const minDayB = Math.min(
-            ...b.maintenanceDetails.map((d) => d.daysRemaining)
-          );
+          const minDayA = a.maintenanceDetails[0]?.daysRemaining ?? 9999;
+          const minDayB = b.maintenanceDetails[0]?.daysRemaining ?? 9999;
           return minDayA - minDayB;
         });
 
@@ -177,7 +166,41 @@ export class ChamSocKhachHangComponent implements OnInit {
     });
   }
 
+  // --- Actions ---
+
+  sendZalo(task: MaintenanceTask) {
+    if (!task.contactNumber) {
+      alert("Khách hàng này không có số điện thoại!");
+      return;
+    }
+    const confirmMsg = `Gửi tin nhắn Zalo nhắc thay [${task.maintenanceDetails[0].coreName}] cho khách [${task.customerName}]?`;
+    if (!confirm(confirmMsg)) return;
+
+    this.zaloService.sendMaintenanceData(task).subscribe({
+      next: (res) => alert("✅ Đã gửi lệnh Zalo thành công!"),
+      error: (err) => alert("❌ Gửi thất bại. Hãy kiểm tra kết nối."),
+    });
+  }
+
+  saveToNocoDB(task: MaintenanceTask) {
+    const record = {
+      "makh": task.customerCode,
+      "name": task.customerName,
+      "sdt": task.contactNumber,
+      "sp": task.productName,
+      "sku": task.sku,
+      "ngaymua": task.purchaseDate,
+      "trangthai": "Đã lưu",
+    };
+
+    this.nocoService.createRecord(record).subscribe({
+      next: (res) => alert("✅ Đã lưu lịch sử vào hệ thống!"),
+      error: (err) => alert("❌ Lỗi khi lưu dữ liệu."),
+    });
+  }
+
   // --- Helpers ---
+  
   formatDate(date: Date): string {
     const d = date.getDate().toString().padStart(2, "0");
     const m = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -185,7 +208,24 @@ export class ChamSocKhachHangComponent implements OnInit {
     return `${d}/${m}/${y}`;
   }
 
-  // --- Phân trang & Tìm kiếm ---
+  findItems() {
+    const term = this.searchTerm.trim().toLowerCase();
+    this.currentPage = 1;
+    if (!term) {
+      this.maintenanceList = [...this.filteredList];
+      return;
+    }
+    this.maintenanceList = this.filteredList.filter((item) => {
+      return (
+        item.contactNumber?.toLowerCase().includes(term) ||
+        item.customerName?.toLowerCase().includes(term) ||
+        item.customerCode?.toLowerCase().includes(term) ||
+        item.sku?.toLowerCase().includes(term)
+      );
+    });
+  }
+
+  // Pagination Getters
   get currentItems(): MaintenanceTask[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     return this.maintenanceList.slice(start, start + this.itemsPerPage);
@@ -195,90 +235,7 @@ export class ChamSocKhachHangComponent implements OnInit {
     return Math.ceil(this.maintenanceList.length / this.itemsPerPage);
   }
 
-  get pagesArray(): number[] {
-    return Array(this.totalPages)
-      .fill(0)
-      .map((x, i) => i + 1);
-  }
-
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) this.currentPage = page;
-  }
-
-  findItems() {
-    const term = this.searchTerm.trim().toLowerCase();
-    this.currentPage = 1;
-
-    if (!term) {
-      this.maintenanceList = [...this.filteredList];
-      return;
-    }
-
-    this.maintenanceList = this.filteredList.filter((item) => {
-      return (
-        item.contactNumber?.toLowerCase().includes(term) ||
-        item.customerName?.toLowerCase().includes(term) ||
-        item.customerCode?.toLowerCase().includes(term) ||
-        item.productName?.toLowerCase().includes(term) ||
-        item.sku?.toLowerCase().includes(term)
-      );
-    });
-  }
-
-  sendZalo(task: any) {
-    if (!task.contactNumber) {
-      alert("Khách hàng này không có số điện thoại!");
-      return;
-    }
-
-    // Hiển thị hộp thoại xác nhận
-    const confirmMsg = `Gửi thông tin bảo trì của khách [${task.customerName}] sang hệ thống xử lý?`;
-    if (!confirm(confirmMsg)) return;
-
-    // GỌI SERVICE MỚI
-    // task chính là object chứa đầy đủ thông tin như JSON bạn yêu cầu
-    this.zaloService.sendMaintenanceData(task).subscribe({
-      next: (res) => {
-        alert("Đã gửi dữ liệu thành công!");
-      },
-      error: (err) => {
-        // console.error("❌ Lỗi gửi tin nhắn Zalo:", err);
-
-        if (err.status === 200) {
-          alert("Đã gửi dữ liệu thành công!");
-        } else {
-          alert("Gửi thất bại. Kiểm tra Console.");
-        }
-      },
-    });
-  }
-
-  // Hàm lưu dữ liệu
-  saveToNocoDB(task: any) {
-    // Chuẩn bị dữ liệu (Key phải trùng với Tên Cột trong NocoDB)
-    const record = {
-      "makh": task.customerCode,
-      "name": task.customerName,
-      "sdt": task.contactNumber,
-      "sp": task.productName,
-      "sku": task.sku,
-      "ngaymua": task.purchaseDate,
-      "diachi": task.address,
-      "khuvuc": task.locationName,
-      // "loicanthay": task.maintenanceDetails[0].coreName,
-      // "ngayhethan": task.maintenanceDetails[0].dueDateStr,
-      "status": "true",
-    };
-
-    this.nocoService.createRecord(record).subscribe({
-      next: (res) => {
-        console.log("✅ Lưu NocoDB thành công:", res);
-        alert("Đã lưu lịch sử vào hệ thống!");
-      },
-      error: (err) => {
-        console.error("❌ Lỗi lưu NocoDB:", err);
-        alert("Lỗi khi lưu dữ liệu.");
-      },
-    });
   }
 }
