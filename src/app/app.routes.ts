@@ -20,6 +20,7 @@ import { SignUpComponent } from "./pages/auth-pages/sign-up/sign-up.component";
 import { CalenderComponent } from "./pages/calender/calender.component";
 import { CustomersComponent } from "./shared/components/custom/customers/customers.component";
 import { DataOrdersComponent } from "./shared/components/custom/data-orders/data-orders.component";
+import { CustomZaloComponent } from "./pages/custom-zalo/custom-zalo.component";
 
 export const routes: Routes = [
   {
@@ -35,17 +36,22 @@ export const routes: Routes = [
       {
         path: "calendar",
         component: CalenderComponent,
-        title: "Angular Calender | Hệ thống CSKH máy lọc nước thông minh",
+        title: "Hệ thống CSKH máy lọc nước thông minh",
       },
       {
         path: "customers",
         component: CustomersComponent,
-        title: "Angular Calender | Hệ thống CSKH máy lọc nước thông minh",
+        title: "Hệ thống CSKH máy lọc nước thông minh",
       },
       {
         path: "cau-hinh",
         component: DataOrdersComponent,
-        title: "Angular Calender | Hệ thống CSKH máy lọc nước thông minh",
+        title: "Hệ thống CSKH máy lọc nước thông minh",
+      },
+      {
+        path: "cau-hinh-zalo",
+        component: CustomZaloComponent,
+        title: "Hệ thống CSKH máy lọc nước thông minh",
       },
       {
         path: "profile",
