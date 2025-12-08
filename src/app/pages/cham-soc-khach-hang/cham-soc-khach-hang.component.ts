@@ -14,6 +14,8 @@ import {
 } from "../../shared/services/customer.service";
 
 import { ZaloService } from "../../shared/services/zalo.service";
+import { NocoService } from "../../shared/services/nocodb.service";
+
 // Components UI
 
 // Services & Data
@@ -61,7 +63,8 @@ export class ChamSocKhachHangComponent implements OnInit {
 
   constructor(
     private kiotVietService: KiotVietService,
-    private zaloService: ZaloService
+    private zaloService: ZaloService,
+    private nocoService: NocoService
   ) {}
 
   ngOnInit(): void {
@@ -222,9 +225,9 @@ export class ChamSocKhachHangComponent implements OnInit {
     });
   }
 
-sendZalo(task: any) {
+  sendZalo(task: any) {
     if (!task.contactNumber) {
-      alert('Khách hàng này không có số điện thoại!');
+      alert("Khách hàng này không có số điện thoại!");
       return;
     }
 
@@ -236,20 +239,46 @@ sendZalo(task: any) {
     // task chính là object chứa đầy đủ thông tin như JSON bạn yêu cầu
     this.zaloService.sendMaintenanceData(task).subscribe({
       next: (res) => {
-        // console.log('✅ Gửi n8n thành công:', res);
-        alert('Đã gửi dữ liệu thành công!');
+        alert("Đã gửi dữ liệu thành công!");
       },
       error: (err) => {
-        console.error('❌ Lỗi gửi n8n:', err);
-        
-        // n8n webhook-test thường trả về text "Webhook received", 
-        // Angular mặc định mong đợi JSON nên có thể báo lỗi cú pháp dù gửi thành công.
+        // console.error("❌ Lỗi gửi tin nhắn Zalo:", err);
+
         if (err.status === 200) {
-             alert('Đã gửi dữ liệu thành công!');
+          alert("Đã gửi dữ liệu thành công!");
         } else {
-             alert('Gửi thất bại. Kiểm tra Console.');
+          alert("Gửi thất bại. Kiểm tra Console.");
         }
-      }
+      },
+    });
+  }
+
+  // Hàm lưu dữ liệu
+  saveToNocoDB(task: any) {
+    // Chuẩn bị dữ liệu (Key phải trùng với Tên Cột trong NocoDB)
+    const record = {
+      "makh": task.customerCode,
+      "name": task.customerName,
+      "sdt": task.contactNumber,
+      "sp": task.productName,
+      "sku": task.sku,
+      "ngaymua": task.purchaseDate,
+      "diachi": task.address,
+      "khuvuc": task.locationName,
+      // "loicanthay": task.maintenanceDetails[0].coreName,
+      // "ngayhethan": task.maintenanceDetails[0].dueDateStr,
+      "status": "true",
+    };
+
+    this.nocoService.createRecord(record).subscribe({
+      next: (res) => {
+        console.log("✅ Lưu NocoDB thành công:", res);
+        alert("Đã lưu lịch sử vào hệ thống!");
+      },
+      error: (err) => {
+        console.error("❌ Lỗi lưu NocoDB:", err);
+        alert("Lỗi khi lưu dữ liệu.");
+      },
     });
   }
 }
