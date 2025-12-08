@@ -6,7 +6,6 @@ import { ChamSocKhachHangComponent } from '../../cham-soc-khach-hang/cham-soc-kh
   selector: 'app-ecommerce',
   imports: [
     TotalCustomerComponent,
-    ChartOrdersComponent,
     ChamSocKhachHangComponent
   ],
   templateUrl: './ecommerce.component.html',
