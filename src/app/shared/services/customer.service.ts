@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Observable, of } from "rxjs";
 import { map, switchMap, tap } from "rxjs/operators";
-import { StorageService } from './storage.service';
+import { StorageService } from "./storage.service";
 
 @Injectable({
   providedIn: "root",
@@ -22,7 +22,24 @@ export class KiotVietService {
 
   private STORAGE_KEY = "kiotviet_session";
 
-  constructor(private http: HttpClient ,private storageService: StorageService) {}
+  constructor(
+    private http: HttpClient,
+    private storageService: StorageService
+  ) {}
+
+  private decryptResponse(response: any): any {
+    if (response && response.payload) {
+      try {
+        const reversed = response.payload.split("").reverse().join("");
+        const jsonString = decodeURIComponent(escape(atob(reversed)));
+        return JSON.parse(jsonString);
+      } catch (e) {
+        console.error("Lỗi giải mã:", e);
+        return [];
+      }
+    }
+    return response;
+  }
 
   // --- Logic lấy Token ---
   public getValidToken(): Observable<string> {
@@ -67,7 +84,6 @@ export class KiotVietService {
 
   private getSession(): any {
     return this.storageService.getItem(this.STORAGE_KEY);
-
   }
 
   private getHeaders(token: string): HttpHeaders {
@@ -85,7 +101,9 @@ export class KiotVietService {
         const headers = this.getHeaders(token);
         const params = new HttpParams().set("pageSize", limit);
         // URL thực tế: https://cskh-phg.../https://public.kiotapi.com/orders
-        return this.http.get(`${this.apiUrl}/orders`, { headers, params });
+        return this.http
+          .get(`${this.apiUrl}/orders`, { headers, params })
+          .pipe(map((res) => this.decryptResponse(res)));
       })
     );
   }
@@ -95,7 +113,9 @@ export class KiotVietService {
       switchMap((token) => {
         const headers = this.getHeaders(token);
         const params = new HttpParams().set("pageSize", limit);
-        return this.http.get(`${this.apiUrl}/customers`, { headers, params });
+        return this.http
+          .get(`${this.apiUrl}/customers`, { headers, params })
+          .pipe(map((res) => this.decryptResponse(res)));
       })
     );
   }
@@ -105,7 +125,9 @@ export class KiotVietService {
       switchMap((token) => {
         const headers = this.getHeaders(token);
         const params = new HttpParams().set("pageSize", limit);
-        return this.http.get(`${this.apiUrl}/users`, { headers, params });
+        return this.http
+          .get(`${this.apiUrl}/users`, { headers, params })
+          .pipe(map((res) => this.decryptResponse(res)));
       })
     );
   }
