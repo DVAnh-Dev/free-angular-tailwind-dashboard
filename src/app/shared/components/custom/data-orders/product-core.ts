@@ -1,178 +1,58 @@
-export const productCoreData = [
-  {
-    stt: 1,
-    sku: "SKU6300",
-    brand: "Mitsuchen",
-    totalCores: 4,
-    lifetimes: [6, 12, 12, 12],
-  },
-  {
-    stt: 2,
-    sku: "TK-AS66-ZEX",
-    brand: "Panasonic",
-    totalCores: 1,
-    lifetimes: [12],
-  },
-  {
-    stt: 3,
-    sku: "TK-AS45C1-EX",
-    brand: "Panasonic",
-    totalCores: 1,
-    lifetimes: [12],
-  },
-  {
-    stt: 4,
-    sku: "C005 (CRYSTAL H)",
-    brand: "Aquaphor",
-    totalCores: 3,
-    lifetimes: [12, 12, 12],
-  },
-  {
-    stt: 5,
-    sku: "TRIO Norma Softening",
-    brand: "Aquaphor",
-    totalCores: 3,
-    lifetimes: [6, 24, 12],
-  },
-  {
-    stt: 6,
-    sku: "Lõi 1 Misuchen",
-    brand: "Mitsuchen",
-    totalCores: 1,
-    lifetimes: [6],
-  },
-  {
-    stt: 7,
-    sku: "Leveluk K8",
-    brand: "Kangen",
-    totalCores: 1,
-    lifetimes: [12],
-  },
-  {
-    stt: 8,
-    sku: "AoSmith A1",
-    brand: "AoSmith",
-    totalCores: 5,
-    lifetimes: [9, 12, 12, 24, 12],
-  },
-  {
-    stt: 9,
-    sku: "AoSmith A2",
-    brand: "AoSmith",
-    totalCores: 5,
-    lifetimes: [9, 12, 12, 24, 12],
-  },
-  {
-    stt: 10,
-    sku: "AoSmith M2",
-    brand: "AoSmith",
-    totalCores: 5,
-    lifetimes: [9, 12, 12, 24, 12],
-  },
-  {
-    stt: 11,
-    sku: "AoSmith C2",
-    brand: "AoSmith",
-    totalCores: 3,
-    lifetimes: [12, 12, 24],
-  },
-  {
-    stt: 12,
-    sku: "AR75-A-S-2",
-    brand: "AoSmith",
-    totalCores: 5,
-    lifetimes: [12, 24, 24, 36, 12],
-  },
-  {
-    stt: 13,
-    sku: "HB-670",
-    brand: "Humero",
-    totalCores: 5,
-    lifetimes: [12, 12, 12, 12, 12],
-  },
-  {
-    stt: 14,
-    sku: "HB-750",
-    brand: "Humero",
-    totalCores: 5,
-    lifetimes: [12, 12, 12, 12, 12],
-  },
-  {
-    stt: 15,
-    sku: "HB-751",
-    brand: "Humero",
-    totalCores: 4,
-    lifetimes: [12, 12, 12, 12],
-  },
-  { stt: 16, sku: "HB-03", brand: "Humero", totalCores: 1, lifetimes: [12] },
-  { stt: 17, sku: "HB-02", brand: "Humero", totalCores: 1, lifetimes: [12] },
-  {
-    stt: 18,
-    sku: "EU301",
-    brand: "Mitsubishi cleansui",
-    totalCores: 0,
-    lifetimes: [],
-  },
-  {
-    stt: 19,
-    sku: "C037 (CRYSTAL ECO H)",
-    brand: "Aquaphor",
-    totalCores: 4,
-    lifetimes: [12, 14, 18, 12],
-  },
-  { stt: 20, sku: "MIX H-8000", brand: "Jenpec", totalCores: 0, lifetimes: [] },
-  { stt: 21, sku: "KG109", brand: "Kangaroo", totalCores: 0, lifetimes: [] },
-  {
-    stt: 22,
-    sku: "K10-HC03UFUV",
-    brand: "Kenko",
-    totalCores: 10,
-    lifetimes: [6, 9, 12, 12, 12],
-  },
-  {
-    stt: 23,
-    sku: "AR75-A-S-H1",
-    brand: "A O smith",
-    totalCores: 3,
-    lifetimes: [12, 36, 18],
-  },
-  {
-    stt: 24,
-    sku: "GWF-60C9660M",
-    brand: "Chungho",
-    totalCores: 3,
-    lifetimes: [12, 36, 24],
-  },
-  { stt: 25, sku: "K4UF-107N", brand: "Kenko", totalCores: 0, lifetimes: [] },
-  { stt: 26, sku: "K8RO", brand: "Kenko", totalCores: 0, lifetimes: [] },
-  {
-    stt: 27,
-    sku: "LIVOTEC 628",
-    brand: "Karofi",
-    totalCores: 10,
-    lifetimes: [],
-  },
-  {
-    stt: 28,
-    sku: "Ecotar 4",
-    brand: "Geyser",
-    totalCores: 3,
-    lifetimes: [12, 12, 12],
-  },
-  { stt: 29, sku: "K9RO-DC", brand: "Kenko", totalCores: 9, lifetimes: [] },
-  {
-    stt: 30,
-    sku: "LCN250L (250L/h)",
-    brand: "Kenko",
-    totalCores: 3,
-    lifetimes: [12, 12, 12],
-  },
-];
-
+// 1. Giữ nguyên Interface để không báo lỗi ở các file khác
 export interface ProductCore {
-  stt: number;
+  id?: string;
+  stt?: number;
   sku: string;
   brand: string;
   totalCores: number;
   lifetimes: number[];
 }
+
+/**
+ * 2. Khởi tạo biến productCoreData.
+ * Ban đầu có thể để mảng rỗng [] hoặc giữ dữ liệu mẫu để hiển thị trong lúc chờ API.
+ * Ở đây tôi để mảng rỗng để ưu tiên hiển thị dữ liệu thật từ API.
+ */
+export const productCoreData: ProductCore[] = [];
+
+/**
+ * 3. Hàm gọi API tự động chạy ngay khi file này được import.
+ * Sử dụng 'fetch' của Javascript thuần vì không thể dùng HttpClient trong file .ts thường.
+ */
+(async () => {
+  const API_URL = "https://692da10fe5f67cd80a4c4f33.mockapi.io/sku";
+
+  try {
+    const response = await fetch(API_URL);
+    if (!response.ok) throw new Error("Failed to fetch data");
+
+    const data = await response.json();
+
+    // 4. Cập nhật dữ liệu vào biến productCoreData mà KHÔNG làm mất tham chiếu
+    // (Các component khác đang trỏ vào biến này sẽ thấy dữ liệu thay đổi)
+
+    // Xóa sạch dữ liệu cũ (nếu có)
+    productCoreData.length = 0;
+
+    // Đẩy dữ liệu mới từ API vào
+    // MockAPI trả về dữ liệu có cấu trúc khớp với Interface nên ta push vào luôn
+    // Lưu ý: Nếu data trả về cần xử lý, bạn có thể map lại tại đây
+    data.forEach((item: any) => {
+      productCoreData.push({
+        id: item.id,
+        stt: item.stt || 0,
+        sku: item.sku,
+        brand: item.brand,
+        totalCores: item.totalCores,
+        lifetimes: item.lifetimes || [],
+      });
+    });
+
+    // console.log("✅ Dữ liệu productCoreData đã được cập nhật từ API:", productCoreData);
+  } catch (error) {
+    console.error("❌ Lỗi khi tải productCoreData:", error);
+
+    // (Tùy chọn) Nếu lỗi API, có thể push dữ liệu mẫu vào đây để app không trắng trang
+    // productCoreData.push(...BACKUP_DATA);
+  }
+})();
