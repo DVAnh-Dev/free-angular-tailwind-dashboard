@@ -83,7 +83,7 @@ export class ZaloService {
     };
 
     // URL
-    const fullUrl = `${this.PROXY_HOST}${this.config.apiUrl}?access_token=${this.config.token}`;
+    const fullUrl = `${this.config.apiUrl}?access_token=${this.config.token}`;
 
     return this.http.post(fullUrl, body, { headers });
   }
@@ -205,7 +205,7 @@ export class ZaloService {
       ]
     };
 
-    const fullUrl = `${this.PROXY_HOST}${this.config.apiUrl}?access_token=${this.config.token}`;
+    const fullUrl = `${this.config.apiUrl}?access_token=${this.config.token}`;
     return this.http.post(fullUrl, body, { headers });
   }
 

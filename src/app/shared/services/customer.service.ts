@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Observable, of } from "rxjs";
 import { map, switchMap, tap } from "rxjs/operators";
+import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: "root",
@@ -21,7 +22,7 @@ export class KiotVietService {
 
   private STORAGE_KEY = "kiotviet_session";
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient ,private storageService: StorageService) {}
 
   // --- Logic lấy Token ---
   public getValidToken(): Observable<string> {
@@ -61,11 +62,12 @@ export class KiotVietService {
       expiresAt: expiresAt,
     };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    this.storageService.setItem(this.STORAGE_KEY, data);
   }
 
   private getSession(): any {
-    const raw = localStorage.getItem(this.STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return this.storageService.getItem(this.STORAGE_KEY);
+
   }
 
   private getHeaders(token: string): HttpHeaders {
